@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Klaviyo Support Engineer",
+  "version": "1.0.0",
+  "description": "Tools for Klaviyo support: page scripts viewer, Klaviyo script reader, document finder, and klaviyo object quick actions.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Klaviyo Support Engineer",
+    "default_icon": {
+      "16": "images/Gemini_Generated_Image_towcetowcetowcet.png",
+      "32": "images/Gemini_Generated_Image_towcetowcetowcet.png",
+      "48": "images/Gemini_Generated_Image_towcetowcetowcet.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

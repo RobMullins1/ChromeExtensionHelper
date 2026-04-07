@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klaviyo Support Engineer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Klaviyo Support</h1>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab active" data-tab="js-blocker" role="tab" aria-selected="true">Scripts</button>
+    <button type="button" class="tab" data-tab="doc-reader" role="tab" aria-selected="false">Doc Reader</button>
+    <button type="button" class="tab" data-tab="doc-finder" role="tab" aria-selected="false">Doc Finder</button>
+    <button type="button" class="tab" data-tab="quick-actions" role="tab" aria-selected="false">Quick Actions</button>
+  </nav>
+
+  <main class="panels">
+    <!-- 1. Page Scripts (view only) -->
+    <section id="panel-js-blocker" class="panel active" role="tabpanel" aria-labelledby="tab-js-blocker">
+      <p class="panel-hint">Scripts on this page, grouped by domain. For reference only — no blocking.</p>
+      <div id="js-blocker-list" class="script-list"></div>
+      <div id="js-blocker-empty" class="empty-state hidden">Scanning…</div>
+      <div id="js-blocker-error" class="error-state hidden"></div>
+    </section>
+
+    <!-- 2. Klaviyo Document Reader -->
+    <section id="panel-doc-reader" class="panel" role="tabpanel" aria-labelledby="tab-doc-reader">
+      <div class="panel-toolbar">
+        <button type="button" id="btn-scan-klaviyo" class="btn btn-primary">Find Klaviyo scripts</button>
+      </div>
+      <div id="doc-reader-list" class="script-list"></div>
+      <div id="doc-reader-empty" class="empty-state hidden">Run &quot;Find Klaviyo scripts&quot; on a page to list Klaviyo-related injections.</div>
+      <div id="doc-reader-error" class="error-state hidden"></div>
+    </section>
+
+    <!-- 3. Document Finder (from Dev Doc Tool) -->
+    <section id="panel-doc-finder" class="panel" role="tabpanel" aria-labelledby="tab-doc-finder">
+      <div id="doc-finder-home" class="docfinder docfinder--home">
+        <div class="docfinder-grid" id="doc-finder-grid"></div>
+      </div>
+      <div id="doc-finder-detail" class="docfinder docfinder--detail hidden">
+        <div class="docfinder-header">
+          <button type="button" class="docfinder-back" id="doc-finder-back" aria-label="Back to platforms">← Back</button>
+          <h2 class="docfinder-title" id="doc-finder-title"></h2>
+        </div>
+        <div class="docfinder-links" id="doc-finder-links"></div>
+      </div>
+    </section>
+
+    <!-- 4. Klaviyo Quick Actions -->
+    <section id="panel-quick-actions" class="panel" role="tabpanel" aria-labelledby="tab-quick-actions">
+      <p class="panel-hint">Copy and paste into the DevTools console on a page where <code>klaviyo</code> is available.</p>
+      <div id="quick-actions-list" class="quick-actions-list"></div>
+    </section>
+  </main>
+
+  <script src="docfinder-data.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+/* --- Apple-style glassmorphism theme --- */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --card-bg: rgba(255, 255, 255, 0.65);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --surface: #f5f5f7;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: linear-gradient(165deg, #f5f5f7 0%, #e8e8ed 50%, #f0f0f5 100%);
+  min-width: 400px;
+  max-width: 480px;
+  max-height: 560px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Frosted header */
+.header {
+  padding: 14px 18px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--card-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Glass tab bar */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
+}
+
+.tab.active {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Main content area */
+.panels {
+  flex: 1;
+  overflow: auto;
+  background: transparent;
+  padding: 14px;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+.panel-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel-toolbar-js-blocker {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panel-toolbar-js-blocker .toolbar-group {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-toolbar-js-blocker .btn-icon {
+  padding: 8px 12px;
+  flex-shrink: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.panel-toolbar-js-blocker .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.icon-reload {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: bold;
+}
+
+/* Glass script groups */
+.script-group {
+  margin-bottom: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
+  transition: box-shadow 0.2s ease;
+}
+
+.script-group:hover {
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.script-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid var(--card-border);
+  backdrop-filter: blur(8px);
+}
+
+.script-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.script-group-chevron {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.script-group-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.script-group-body {
+  padding: 8px 10px 10px;
+}
+
+.script-group--collapsed .script-group-body {
+  display: none;
+}
+
+.script-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-block-group {
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--glass-shadow);
+}
+
+.btn-copy {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--text-primary);
+  color: #fff;
+  flex-shrink: 0;
+  border-radius: 8px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-copy:hover {
+  background: #333;
+}
+
+.btn-copy:active {
+  transform: scale(0.97);
+}
+
+.btn-block {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #c00;
+  color: #fff;
+  border-radius: 8px;
+}
+
+.btn-block.blocked {
+  background: #34c759;
+}
+
+/* Panel hint text */
+.panel-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.panel-hint code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.panel-hint--small {
+  margin-top: -4px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.script-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Glass script items */
+.script-item {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  word-break: break-all;
+  box-shadow: var(--glass-shadow);
+  transition: box-shadow 0.2s ease;
+}
+
+.script-item:hover {
+  box-shadow: var(--glass-shadow-hover);
+}
+
+#doc-reader-list .doc-reader-section-header {
+  margin: 16px 0 10px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+#doc-reader-list .doc-reader-section-header:first-child {
+  margin-top: 0;
+}
+
+#doc-reader-list .script-item--inline {
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+#doc-reader-list .script-snippet-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+#doc-reader-list .script-snippet-row .script-snippet {
+  flex: 1;
+  min-width: 0;
+}
+
+#doc-reader-list .btn-copy-icon {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+  line-height: 1;
+  background: var(--text-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+#doc-reader-list .btn-copy-icon:hover {
+  background: #333;
+}
+
+#doc-reader-list .btn-copy-icon:active {
+  transform: scale(0.97);
+}
+
+.script-item .script-url {
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.script-item .script-snippet {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: ui-monospace, "SF Mono", monospace;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+
+.script-item .script-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.script-item .script-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.empty-state,
+.error-state {
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error-state {
+  color: #ff3b30;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.placeholder-message {
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Quick Actions — glass cards */
+.quick-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-action-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--glass-shadow);
+  transition: box-shadow 0.2s ease;
+}
+
+.quick-action-card:hover {
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.quick-action-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.quick-action-card .description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+
+.quick-action-card .snippet-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+.quick-action-card pre {
+  flex: 1;
+  margin: 0;
+  font-size: 11px;
+  font-family: ui-monospace, "SF Mono", monospace;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+}
+
+.quick-action-card .btn-copy-icon {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+  line-height: 1;
+  background: var(--text-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.quick-action-card .btn-copy-icon:hover {
+  background: #333;
+}
+.quick-action-card .btn-copy-icon:active {
+  transform: scale(0.97);
+}
+
+/* Doc Finder — glass style */
+.docfinder {
+  min-height: 0;
+}
+.docfinder--detail.hidden {
+  display: none !important;
+}
+.docfinder-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.docfinder-card {
+  width: calc(50% - 6px);
+  min-width: 0;
+}
+.docfinder-card .button-28 {
+  width: 100%;
+  text-align: center;
+  padding: 14px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+  transition: box-shadow 0.2s, transform 0.1s, border-color 0.2s;
+}
+.docfinder-card .button-28:hover {
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.docfinder-card .button-28:active {
+  transform: scale(0.98);
+}
+.docfinder-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.docfinder-back {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--glass-shadow);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.docfinder-back:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--glass-shadow-hover);
+}
+.docfinder-back:active {
+  transform: scale(0.98);
+}
+.docfinder-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: -0.02em;
+}
+.docfinder-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.docfinder-link-wrap {
+  width: calc(50% - 5px);
+  min-width: 0;
+}
+.docfinder .button-28 {
+  appearance: none;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: var(--text-primary);
+  box-shadow: var(--glass-shadow);
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.1s;
+}
+.docfinder .button-28:hover {
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.docfinder .button-28:active {
+  transform: scale(0.98);
+}
