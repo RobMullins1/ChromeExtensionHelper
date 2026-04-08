@@ -19,9 +19,16 @@
   </nav>
 
   <main class="panels">
-    <!-- 1. Page Scripts (view only) -->
+    <!-- 1. Page Scripts -->
     <section id="panel-js-blocker" class="panel active" role="tabpanel" aria-labelledby="tab-js-blocker">
-      <p class="panel-hint">Scripts on this page, grouped by domain. For reference only — no blocking.</p>
+      <p class="panel-hint">Toggle scripts to block them on this site. Reload required after changes.</p>
+      <div id="js-blocker-reload-banner" class="reload-banner hidden">
+        <span>Changes pending</span>
+        <button type="button" id="btn-reload-page" class="btn btn-primary btn-sm">Reload page</button>
+      </div>
+      <div class="panel-toolbar panel-toolbar-js-blocker">
+        <button type="button" id="btn-clear-all-blocks" class="btn btn-secondary btn-sm hidden">Clear all blocks</button>
+      </div>
       <div id="js-blocker-list" class="script-list"></div>
       <div id="js-blocker-empty" class="empty-state hidden">Scanning…</div>
       <div id="js-blocker-error" class="error-state hidden"></div>

@@ -328,6 +328,9 @@ body {
 
 /* Glass script items */
 .script-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: var(--card-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -336,11 +339,93 @@ body {
   padding: 12px 14px;
   word-break: break-all;
   box-shadow: var(--glass-shadow);
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .script-item:hover {
   box-shadow: var(--glass-shadow-hover);
+}
+
+.script-item .script-url {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Blocked script state */
+.script-item--blocked {
+  opacity: 0.55;
+  border-color: rgba(255, 59, 48, 0.25);
+}
+
+.script-item--blocked .script-url {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Toggle switch (iOS-style) */
+.script-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.script-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.script-toggle .toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+
+.script-toggle .toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s ease;
+}
+
+.script-toggle input:checked + .toggle-slider {
+  background: #34c759;
+}
+
+.script-toggle input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
+
+/* Reload banner */
+.reload-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 149, 0, 0.12);
+  border: 1px solid rgba(255, 149, 0, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: #cc7700;
+}
+
+/* Small button variant */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 #doc-reader-list .doc-reader-section-header {
@@ -395,7 +480,6 @@ body {
 .script-item .script-url {
   font-size: 12px;
   color: var(--text-primary);
-  margin-bottom: 6px;
 }
 
 .script-item .script-snippet {

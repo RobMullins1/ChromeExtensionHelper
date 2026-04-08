@@ -43,9 +43,129 @@
   const jsBlockerList = document.getElementById('js-blocker-list');
   const jsBlockerEmpty = document.getElementById('js-blocker-empty');
   const jsBlockerError = document.getElementById('js-blocker-error');
+  const reloadBanner = document.getElementById('js-blocker-reload-banner');
+  const btnReloadPage = document.getElementById('btn-reload-page');
+  const btnClearAll = document.getElementById('btn-clear-all-blocks');
 
   let currentJsBlockerScripts = [];
+  let currentPageDomain = '';
   const expandedGroupNames = new Set();
+
+  // --- Script blocking helpers (declarativeNetRequest + storage) ---
+
+  async function getBlockedScripts() {
+    const data = await chrome.storage.local.get(['blockedScripts']);
+    return data.blockedScripts || {};
+  }
+
+  async function getNextRuleId() {
+    const data = await chrome.storage.local.get(['nextRuleId']);
+    return data.nextRuleId || 1;
+  }
+
+  async function saveBlockedScripts(blockedScripts, nextRuleId) {
+    await chrome.storage.local.set({ blockedScripts, nextRuleId });
+  }
+
+  async function blockScript(scriptUrl, pageDomain) {
+    const key = pageDomain + '||' + scriptUrl;
+    const blocked = await getBlockedScripts();
+    if (blocked[key]) return;
+
+    const ruleId = await getNextRuleId();
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      addRules: [{
+        id: ruleId,
+        priority: 1,
+        action: { type: 'block' },
+        condition: {
+          urlFilter: scriptUrl,
+          resourceTypes: ['script'],
+          initiatorDomains: [pageDomain]
+        }
+      }],
+      removeRuleIds: []
+    });
+
+    blocked[key] = {
+      ruleId,
+      scriptUrl,
+      pageDomain,
+      blockedAt: Date.now()
+    };
+
+    await saveBlockedScripts(blocked, ruleId + 1);
+  }
+
+  async function unblockScript(scriptUrl, pageDomain) {
+    const key = pageDomain + '||' + scriptUrl;
+    const blocked = await getBlockedScripts();
+    const entry = blocked[key];
+    if (!entry) return;
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      addRules: [],
+      removeRuleIds: [entry.ruleId]
+    });
+
+    delete blocked[key];
+    const nextId = await getNextRuleId();
+    await saveBlockedScripts(blocked, nextId);
+  }
+
+  async function clearAllBlocks() {
+    const blocked = await getBlockedScripts();
+    const ruleIds = Object.values(blocked).map(e => e.ruleId);
+
+    if (ruleIds.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: [],
+        removeRuleIds: ruleIds
+      });
+    }
+
+    await chrome.storage.local.set({ blockedScripts: {}, nextRuleId: 1 });
+  }
+
+  async function getBlockedForDomain(pageDomain) {
+    const blocked = await getBlockedScripts();
+    const result = {};
+    for (const [, entry] of Object.entries(blocked)) {
+      if (entry.pageDomain === pageDomain) {
+        result[entry.scriptUrl] = entry;
+      }
+    }
+    return result;
+  }
+
+  function showReloadBanner() {
+    reloadBanner.classList.remove('hidden');
+  }
+
+  function hideReloadBanner() {
+    reloadBanner.classList.add('hidden');
+  }
+
+  async function updateClearAllVisibility() {
+    const blocked = await getBlockedScripts();
+    const hasAny = Object.keys(blocked).length > 0;
+    btnClearAll.classList.toggle('hidden', !hasAny);
+  }
+
+  btnReloadPage.addEventListener('click', async () => {
+    const tab = await getActiveTab();
+    if (!tab?.id) return;
+    hideReloadBanner();
+    chrome.runtime.sendMessage({ type: 'reloadTabAndReopen', tabId: tab.id });
+  });
+
+  btnClearAll.addEventListener('click', async () => {
+    await clearAllBlocks();
+    showReloadBanner();
+    await renderJsBlockerList(currentJsBlockerScripts, currentPageDomain);
+    await updateClearAllVisibility();
+  });
 
   function getScriptGroupKey(url) {
     try {
@@ -80,22 +200,37 @@
     jsBlockerError.textContent = '';
   }
 
-  function renderJsBlockerList(scripts) {
+  async function renderJsBlockerList(scripts, pageDomain) {
     currentJsBlockerScripts = scripts || [];
+    currentPageDomain = pageDomain || '';
     hideJsBlockerError();
     jsBlockerEmpty.classList.add('hidden');
     jsBlockerList.classList.remove('hidden');
     jsBlockerList.innerHTML = '';
-    if (!scripts || scripts.length === 0) {
+
+    const blockedForDomain = await getBlockedForDomain(pageDomain);
+
+    // Merge blocked-but-not-scanned scripts into the list
+    const scannedUrls = new Set((scripts || []).map(s => s.url));
+    const merged = [...(scripts || [])];
+    for (const [url] of Object.entries(blockedForDomain)) {
+      if (!scannedUrls.has(url)) {
+        merged.push({ url, id: null });
+      }
+    }
+
+    if (merged.length === 0) {
       jsBlockerList.classList.add('hidden');
       jsBlockerEmpty.classList.remove('hidden');
       jsBlockerEmpty.textContent = 'No script URLs found on this page.';
       return;
     }
 
-    const grouped = groupScriptsByDomain(scripts);
+    const grouped = groupScriptsByDomain(merged);
     for (const [groupName, groupScripts] of grouped) {
       const isExpanded = expandedGroupNames.has(groupName);
+      const allBlocked = groupScripts.every(({ url }) => !!blockedForDomain[url]);
+      const someBlocked = groupScripts.some(({ url }) => !!blockedForDomain[url]);
 
       const groupEl = document.createElement('div');
       groupEl.className = 'script-group' + (isExpanded ? '' : ' script-group--collapsed');
@@ -115,22 +250,39 @@
         ' (' +
         groupScripts.length +
         ')</span>' +
-        '</button>';
+        '</button>' +
+        '<label class="script-toggle script-group-toggle-all" title="Block/allow all in group">' +
+        '<input type="checkbox" ' + (allBlocked ? '' : 'checked') +
+        ' data-group-name="' + escapeHtml(groupName) + '">' +
+        '<span class="toggle-slider"></span>' +
+        '</label>';
       groupEl.appendChild(header);
+
+      // Set indeterminate state (must be done imperatively, not via HTML)
+      if (someBlocked && !allBlocked) {
+        const groupCb = header.querySelector('.script-group-toggle-all input');
+        if (groupCb) groupCb.indeterminate = true;
+      }
 
       const body = document.createElement('div');
       body.className = 'script-group-body';
       const listEl = document.createElement('div');
       listEl.className = 'script-group-list';
       for (const { url } of groupScripts) {
+        const isBlocked = !!blockedForDomain[url];
         const item = document.createElement('div');
-        item.className = 'script-item';
+        item.className = 'script-item' + (isBlocked ? ' script-item--blocked' : '');
         item.innerHTML =
           '<div class="script-url" title="' +
           escapeHtml(url) +
           '">' +
           escapeHtml(truncateUrl(url)) +
-          '</div>';
+          '</div>' +
+          '<label class="script-toggle" title="' + (isBlocked ? 'Blocked' : 'Allowed') + '">' +
+          '<input type="checkbox" ' + (isBlocked ? '' : 'checked') +
+          ' data-script-url="' + escapeHtml(url) + '">' +
+          '<span class="toggle-slider"></span>' +
+          '</label>';
         listEl.appendChild(item);
       }
       body.appendChild(listEl);
@@ -138,6 +290,7 @@
       jsBlockerList.appendChild(groupEl);
     }
 
+    // Toggle expand/collapse handlers
     jsBlockerList.querySelectorAll('.script-group-toggle').forEach((btn) => {
       btn.addEventListener('click', () => {
         const group = btn.closest('.script-group');
@@ -151,6 +304,71 @@
         btn.setAttribute('aria-expanded', String(!expanded));
         const chevron = btn.querySelector('.script-group-chevron');
         if (chevron) chevron.textContent = expanded ? '▶' : '▼';
+      });
+    });
+
+    // Individual toggle block/unblock handlers
+    jsBlockerList.querySelectorAll('.script-item .script-toggle input').forEach((checkbox) => {
+      checkbox.addEventListener('change', async (e) => {
+        const scriptUrl = e.target.getAttribute('data-script-url');
+        const item = e.target.closest('.script-item');
+        const toggle = e.target.closest('.script-toggle');
+
+        e.target.disabled = true;
+        try {
+          if (e.target.checked) {
+            await unblockScript(scriptUrl, pageDomain);
+            item.classList.remove('script-item--blocked');
+            toggle.title = 'Allowed';
+          } else {
+            await blockScript(scriptUrl, pageDomain);
+            item.classList.add('script-item--blocked');
+            toggle.title = 'Blocked';
+          }
+          showReloadBanner();
+          await updateClearAllVisibility();
+
+          // Sync the group toggle state
+          const groupEl = item.closest('.script-group');
+          const groupCb = groupEl?.querySelector('.script-group-toggle-all input');
+          if (groupCb) {
+            const allInputs = [...groupEl.querySelectorAll('.script-item .script-toggle input')];
+            const blockedCount = allInputs.filter(i => !i.checked).length;
+            groupCb.checked = blockedCount === 0;
+            groupCb.indeterminate = blockedCount > 0 && blockedCount < allInputs.length;
+          }
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    });
+
+    // Group toggle handlers (block/unblock all in group)
+    jsBlockerList.querySelectorAll('.script-group-toggle-all input').forEach((cb) => {
+      cb.addEventListener('change', async (e) => {
+        const group = e.target.closest('.script-group');
+        const individualInputs = [...group.querySelectorAll('.script-item .script-toggle input')];
+        const urls = individualInputs.map(i => i.getAttribute('data-script-url'));
+
+        e.target.disabled = true;
+        e.target.indeterminate = false;
+        try {
+          if (e.target.checked) {
+            for (const url of urls) await unblockScript(url, pageDomain);
+          } else {
+            for (const url of urls) await blockScript(url, pageDomain);
+          }
+          // Sync individual toggles visually
+          individualInputs.forEach(i => {
+            i.checked = e.target.checked;
+            i.closest('.script-item').classList.toggle('script-item--blocked', !e.target.checked);
+            i.closest('.script-toggle').title = e.target.checked ? 'Allowed' : 'Blocked';
+          });
+          showReloadBanner();
+          await updateClearAllVisibility();
+        } finally {
+          e.target.disabled = false;
+        }
       });
     });
   }
@@ -173,6 +391,12 @@
     jsBlockerEmpty.classList.remove('hidden');
     jsBlockerEmpty.textContent = 'Scanning…';
     jsBlockerList.classList.add('hidden');
+
+    let pageDomain = '';
+    try {
+      pageDomain = new URL(tab.url).hostname;
+    } catch (_) {}
+
     try {
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -186,7 +410,8 @@
         jsBlockerEmpty.textContent = '';
         return;
       }
-      renderJsBlockerList(scripts);
+      await renderJsBlockerList(scripts, pageDomain);
+      await updateClearAllVisibility();
     } catch (_) {
       jsBlockerEmpty.textContent = 'Run on a normal webpage to list scripts.';
     }
