@@ -482,42 +482,60 @@
       const externalItems = list.filter((a) => a.type === 'external');
 
       function appendScriptItem(item) {
+        const isInline = item.type === 'inline';
         const div = document.createElement('div');
-        div.className = 'script-item' + (item.type === 'inline' ? ' script-item--inline' : '');
-        const meta = item.type === 'external' ? 'External: ' + (item.src || '') : 'Inline';
-        const snippetEscaped = escapeHtml(item.snippet);
-        const copyBtn = item.type === 'inline'
-          ? '<button type="button" class="btn btn-copy-icon" title="Copy snippet" aria-label="Copy snippet">\u2398</button>'
-          : '';
+        div.className = 'script-item' + (isInline ? ' script-item--inline' : '');
+
+        const copyText = isInline ? item.snippet : (item.src || '');
+        const preview = isInline ? item.snippet.slice(0, 80).replace(/\s+/g, ' ') : '';
+
         div.innerHTML =
-          '<div class="script-meta">' +
-          escapeHtml(meta) +
-          '</div>' +
-          (item.src ? '<div class="script-url" title="' + escapeHtml(item.src) + '">' + escapeHtml(truncateUrl(item.src)) + '</div>' : '') +
-          '<div class="script-snippet-row">' +
-          '<div class="script-snippet">' + snippetEscaped + '</div>' +
-          copyBtn +
+          '<div class="dr-card-header">' +
+            '<span class="dr-badge ' + (isInline ? 'dr-badge--inline' : 'dr-badge--external') + '">' +
+              (isInline ? 'Inline' : 'External') +
+            '</span>' +
+            '<div class="dr-card-body">' +
+              (item.src
+                ? '<div class="dr-url">' + escapeHtml(item.src) + '</div>'
+                : '<div class="dr-preview">' + escapeHtml(preview) + (item.snippet.length > 80 ? '…' : '') + '</div>') +
+              (isInline
+                ? '<button type="button" class="dr-code-toggle">▶ Show code</button>'
+                : '') +
+              (isInline
+                ? '<div class="dr-snippet-body"><pre>' + escapeHtml(item.snippet) + '</pre></div>'
+                : '') +
+            '</div>' +
+            '<button type="button" class="btn btn-copy-icon" title="Copy" aria-label="Copy">\u2398</button>' +
           '</div>';
+
         docReaderList.appendChild(div);
-        if (item.type === 'inline' && copyBtn) {
-          const btn = div.querySelector('.btn-copy-icon');
-          if (btn) {
-            btn.addEventListener('click', async (e) => {
-              e.stopPropagation();
-              try {
-                await navigator.clipboard.writeText(item.snippet);
-                btn.textContent = '\u2713';
-                btn.setAttribute('title', 'Copied');
-                setTimeout(() => {
-                  btn.textContent = '\u2398';
-                  btn.setAttribute('title', 'Copy snippet');
-                }, 1500);
-              } catch (_) {
-                btn.setAttribute('title', 'Copy failed');
-                setTimeout(() => btn.setAttribute('title', 'Copy snippet'), 1500);
-              }
-            });
+
+        // Copy button
+        const copyBtn = div.querySelector('.btn-copy-icon');
+        copyBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(copyText);
+            copyBtn.textContent = '\u2713';
+            copyBtn.setAttribute('title', 'Copied');
+            setTimeout(() => {
+              copyBtn.textContent = '\u2398';
+              copyBtn.setAttribute('title', 'Copy');
+            }, 1500);
+          } catch (_) {
+            copyBtn.setAttribute('title', 'Copy failed');
+            setTimeout(() => copyBtn.setAttribute('title', 'Copy'), 1500);
           }
+        });
+
+        // Expand/collapse code toggle (inline only)
+        if (isInline) {
+          const toggleBtn = div.querySelector('.dr-code-toggle');
+          const snippetBody = div.querySelector('.dr-snippet-body');
+          toggleBtn.addEventListener('click', () => {
+            const expanded = snippetBody.classList.toggle('expanded');
+            toggleBtn.textContent = expanded ? '▼ Hide code' : '▶ Show code';
+          });
         }
       }
 

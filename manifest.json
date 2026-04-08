@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Klaviyo Support Engineer",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Tools for Klaviyo support: page scripts viewer, Klaviyo script reader, document finder, and klaviyo object quick actions.",
   "permissions": [
     "activeTab",
