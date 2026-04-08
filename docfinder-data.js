@@ -27,10 +27,10 @@ const DOC_FINDER_PLATFORMS = [
     id: 'developer',
     label: 'Developer Portal',
     links: [
-      { url: 'https://developers.klaviyo.com/en/docs/apis_overview', text: 'API Overview' },
-      { url: 'https://developers.klaviyo.com/en/docs/quickstart', text: 'Quickstart' },
+      { url: 'https://developers.klaviyo.com/en/docs/api_overview', text: 'API Overview' },
+      { url: 'https://developers.klaviyo.com/en/docs/get_started', text: 'Get Started' },
       { url: 'https://developers.klaviyo.com/en/docs/sdk_overview', text: 'SDK Overview' },
-      { url: 'https://developers.klaviyo.com/en/docs/developer_reference', text: 'Developer Reference' },
+      { url: 'https://developers.klaviyo.com/en/reference', text: 'API Reference' },
       { url: 'https://developers.klaviyo.com/en/docs', text: 'Docs Home' },
     ],
   },
