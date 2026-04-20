@@ -46,9 +46,13 @@
   const reloadBanner = document.getElementById('js-blocker-reload-banner');
   const btnReloadPage = document.getElementById('btn-reload-page');
   const btnClearAll = document.getElementById('btn-clear-all-blocks');
+  const jsBlockerSearch = document.getElementById('js-blocker-search');
+  const jsBlockerSearchSummary = document.getElementById('js-blocker-search-summary');
 
   let currentJsBlockerScripts = [];
   let currentPageDomain = '';
+  let jsBlockerSearchQuery = '';
+  let jsBlockerSearchDebounce = null;
   const expandedGroupNames = new Set();
 
   // --- Script blocking helpers (declarativeNetRequest + storage) ---
@@ -167,6 +171,25 @@
     await updateClearAllVisibility();
   });
 
+  jsBlockerSearch.addEventListener('input', (e) => {
+    clearTimeout(jsBlockerSearchDebounce);
+    const value = e.target.value;
+    jsBlockerSearchDebounce = setTimeout(() => {
+      jsBlockerSearchQuery = value.trim().toLowerCase();
+      renderJsBlockerList(currentJsBlockerScripts, currentPageDomain);
+    }, 120);
+  });
+
+  jsBlockerSearch.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && jsBlockerSearch.value) {
+      e.stopPropagation();
+      jsBlockerSearch.value = '';
+      clearTimeout(jsBlockerSearchDebounce);
+      jsBlockerSearchQuery = '';
+      renderJsBlockerList(currentJsBlockerScripts, currentPageDomain);
+    }
+  });
+
   function getScriptGroupKey(url) {
     try {
       const u = new URL(url);
@@ -212,23 +235,36 @@
 
     // Merge blocked-but-not-scanned scripts into the list
     const scannedUrls = new Set((scripts || []).map(s => s.url));
-    const merged = [...(scripts || [])];
+    const allScripts = [...(scripts || [])];
     for (const [url] of Object.entries(blockedForDomain)) {
       if (!scannedUrls.has(url)) {
-        merged.push({ url, id: null });
+        allScripts.push({ url, id: null });
       }
     }
 
-    if (merged.length === 0) {
+    if (allScripts.length === 0) {
       jsBlockerList.classList.add('hidden');
       jsBlockerEmpty.classList.remove('hidden');
       jsBlockerEmpty.textContent = 'No script URLs found on this page.';
+      updateSearchSummary(0, 0);
+      return;
+    }
+
+    const query = jsBlockerSearchQuery;
+    const merged = query
+      ? allScripts.filter((s) => s.url.toLowerCase().includes(query))
+      : allScripts;
+
+    updateSearchSummary(merged.length, allScripts.length);
+
+    if (merged.length === 0) {
+      jsBlockerList.classList.add('hidden');
       return;
     }
 
     const grouped = groupScriptsByDomain(merged);
     for (const [groupName, groupScripts] of grouped) {
-      const isExpanded = expandedGroupNames.has(groupName);
+      const isExpanded = query ? true : expandedGroupNames.has(groupName);
       const allBlocked = groupScripts.every(({ url }) => !!blockedForDomain[url]);
       const someBlocked = groupScripts.some(({ url }) => !!blockedForDomain[url]);
 
@@ -276,7 +312,7 @@
           '<div class="script-url" title="' +
           escapeHtml(url) +
           '">' +
-          escapeHtml(truncateUrl(url)) +
+          renderScriptUrl(url, query) +
           '</div>' +
           '<label class="script-toggle" title="' + (isBlocked ? 'Blocked' : 'Allowed') + '">' +
           '<input type="checkbox" ' + (isBlocked ? '' : 'checked') +
@@ -376,6 +412,58 @@
   function truncateUrl(url, maxLen = 80) {
     if (url.length <= maxLen) return url;
     return url.slice(0, maxLen - 3) + '...';
+  }
+
+  // Returns a display string of length ~maxLen that includes the match substring.
+  // If the match is past the regular truncation window, slides the window so the
+  // match is visible (with a leading ellipsis).
+  function displayUrlForMatch(url, query, maxLen = 80) {
+    if (url.length <= maxLen) return { text: url, offset: 0 };
+    const idx = query ? url.toLowerCase().indexOf(query) : -1;
+    if (idx === -1 || idx + query.length <= maxLen - 3) {
+      return { text: url.slice(0, maxLen - 3) + '...', offset: 0 };
+    }
+    // Slide window so match starts ~20 chars into the visible string.
+    const lead = 20;
+    let start = Math.max(0, idx - lead);
+    let end = Math.min(url.length, start + maxLen - 4);
+    start = Math.max(0, Math.min(start, url.length - (maxLen - 4)));
+    const tail = end < url.length ? '...' : '';
+    return { text: '...' + url.slice(start, end) + tail, offset: start - 3 };
+  }
+
+  // Builds the inner HTML for the .script-url element, with <mark> highlight
+  // around the matched substring when a query is active.
+  function renderScriptUrl(url, query) {
+    const { text, offset } = displayUrlForMatch(url, query);
+    if (!query) return escapeHtml(text);
+    // Find match position inside the display text (not the full URL).
+    const fullIdx = url.toLowerCase().indexOf(query);
+    if (fullIdx === -1) return escapeHtml(text);
+    const localIdx = fullIdx - offset;
+    if (localIdx < 0 || localIdx + query.length > text.length) {
+      return escapeHtml(text);
+    }
+    return escapeHtml(text.slice(0, localIdx))
+      + '<mark class="script-url-match">'
+      + escapeHtml(text.slice(localIdx, localIdx + query.length))
+      + '</mark>'
+      + escapeHtml(text.slice(localIdx + query.length));
+  }
+
+  function updateSearchSummary(shown, total) {
+    if (!jsBlockerSearchSummary) return;
+    if (!jsBlockerSearchQuery) {
+      jsBlockerSearchSummary.classList.add('hidden');
+      jsBlockerSearchSummary.textContent = '';
+      return;
+    }
+    jsBlockerSearchSummary.classList.remove('hidden');
+    if (shown === 0) {
+      jsBlockerSearchSummary.textContent = 'No scripts match "' + jsBlockerSearchQuery + '"';
+    } else {
+      jsBlockerSearchSummary.textContent = 'Showing ' + shown + ' of ' + total + ' scripts';
+    }
   }
 
   function escapeHtml(s) {

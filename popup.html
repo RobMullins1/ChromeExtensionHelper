@@ -27,8 +27,15 @@
         <button type="button" id="btn-reload-page" class="btn btn-primary btn-sm">Reload page</button>
       </div>
       <div class="panel-toolbar panel-toolbar-js-blocker">
+        <div class="script-search">
+          <input type="search" id="js-blocker-search" class="script-search-input"
+                 placeholder="Search scripts (filename, path, hash…)"
+                 aria-label="Search scripts" aria-controls="js-blocker-list"
+                 autocomplete="off" spellcheck="false">
+        </div>
         <button type="button" id="btn-clear-all-blocks" class="btn btn-secondary btn-sm hidden">Clear all blocks</button>
       </div>
+      <div id="js-blocker-search-summary" class="script-search-summary hidden" aria-live="polite"></div>
       <div id="js-blocker-list" class="script-list"></div>
       <div id="js-blocker-empty" class="empty-state hidden">Scanning…</div>
       <div id="js-blocker-error" class="error-state hidden"></div>
